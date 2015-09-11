@@ -1,0 +1,74 @@
+#!/bin/sh
+#
+# /etc/init.d/mysystem
+# Subsystem file for "MySystem" server
+#
+# chkconfig: 2345 95 05	(1)
+# description: MySystem server daemon
+#
+# processname: MySystem
+# config: /etc/MySystem/mySystem.conf
+# config: /etc/sysconfig/mySystem
+# pidfile: /var/run/MySystem.pid
+
+# source function library
+
+# pull in sysconfig settings
+[ -f /etc/sysconfig/mySystem ] && . /etc/sysconfig/mySystem	]
+
+RETVAL=0
+prog="start-stop-daemon /opt/button/button.py"
+start() {
+	echo -n $"Starting $prog:"
+    start-stop-daemon --start --background --pidfile /opt/button/button.pid --make-pidfile --user root --chuid root --startas /opt/button/button.py
+	RETVAL=$?
+	[ "$RETVAL" = 0 ]
+	echo
+}
+
+stop() {
+	echo -n $"Stopping $prog:"
+    start-stop-daemon --stop --pidfile /opt/button/button.pid --retry 10
+	RETVAL=$?
+	[ "$RETVAL" = 0 ]
+	echo
+}
+
+reload() {
+	echo -n $"Reloading $prog:"
+	killproc $prog -HUP
+	RETVAL=$?
+	echo
+}
+
+case "$1" in
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	restart)
+		stop
+		start
+		;;
+	reload)
+		reload
+		;;
+	condrestart)
+		if [ -f /var/lock/subsys/$prog ] ; then
+			stop
+			# avoid race
+			sleep 3
+			start
+		fi
+		;;
+	status)
+		status $prog
+		RETVAL=$?
+		;;
+	*)
+		echo $"Usage: $0 {start|stop|restart|reload|condrestart|status}"
+		RETVAL=1
+esac
+exit $RETVAL
